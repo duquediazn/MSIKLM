@@ -27,13 +27,13 @@ function enable_autostart() {
   fi
     
   # Add msiklm to sudoers if it doesn't exist
-    if [ ! -f /etc/sudoers.d/extraPermissions ]; then
-      echo "Adding msiklm to sudoers..."
-      echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/msiklm" | sudo tee /etc/sudoers.d/extraPermissions
-      sudo chmod 440 /etc/sudoers.d/extraPermissions
-    else
-      echo "The sudoers file already exists, skipping this step..."
-    fi
+  if ! sudo grep -q "$msiklm" /etc/sudoers.d/extraPermissions 2>/dev/null; then
+    echo "Adding msiklm to sudoers..."
+    echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: $msiklm" | sudo tee /etc/sudoers.d/extraPermissions
+    sudo chmod 440 /etc/sudoers.d/extraPermissions
+  else
+    echo "The sudoers file already exists, skipping this step..."
+  fi
 
   # Create or update the systemd service file
   echo "Creating or updating the systemd service file..."
@@ -56,15 +56,18 @@ WantedBy=systemd-hibernate.service
 EOL
 
   # Reload systemd daemons
-  sudo systemctl daemon-reload
-
-  # Enable the service
-  sudo systemctl enable msiklm.service
-
-  # Restart the service to apply new parameters
-  sudo systemctl restart msiklm.service
-
-  echo "Configuration complete. The msiklm service is now enabled and running with the parameters: $@"
+  if sudo systemctl daemon-reload && sudo systemctl enable msiklm.service; then
+    # Restart the service to apply new parameters
+    if sudo systemctl restart msiklm.service; then
+      echo "Configuration complete. The msiklm service is now enabled and running with the parameters: $@"
+    else
+      echo "Failed to restart the msiklm service."
+      exit 1
+    fi
+  else
+    echo "Failed to reload systemd daemons or enable the msiklm service."
+    exit 1
+  fi
 }
 
 # Function to disable autostart
@@ -86,3 +89,4 @@ fi
 
 # Otherwise, enable autostart with provided arguments
 enable_autostart "$@"
+
