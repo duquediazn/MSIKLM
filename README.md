@@ -160,7 +160,7 @@ the communication with the keyboard while it is controlled by the SteelSeries En
 
 # Autostart
 
-This script registers MSIKLM to the systemd service, ensuring that your keyboard configuration is
+An important additional feature is the optional autostart functionality since the keyboard will reset itself to its default color configuration whenever you reboot it or resume from standby. Hence, it is really useful to automatically reconfigure the keyboard to your configuration of choice. To do this, there is an extra script called autostart.sh that can do this for you. This script registers MSIKLM to the systemd service, ensuring that your keyboard configuration is
 applied automatically at startup.
 
 To set up autostart with your preferred MSIKLM arguments, run:
