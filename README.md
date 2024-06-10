@@ -171,7 +171,7 @@ Try if everything works by first rebooting your system and then try a standby an
 
 The autostart can be disabled by running
 
-    sudo ./autostart_disable
+    sudo ./autostart --disable
 
 which will disable the autostart by removing the systemd service.
 
