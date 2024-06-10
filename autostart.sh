@@ -1,60 +1,60 @@
-#!/bin/sh
+#!/bin/bash
 
-# to enable the autostart, execute this script with your configuration of choice (same arguments as used for 'msiklm')
-# this script will create a file '/etc/udev/rules.d/90-msiklm.rules' to activate the respective configuration at startup or wakeup
-# further, this script can also undo this by calling it with the '--disable' argument
+# Detect the username
+USERNAME=$(whoami)
 
+# Check if the script is being run as root
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run this script as root."
+  exit 1
+fi
+
+# Check if arguments are provided
 if [ $# -eq 0 ]; then
-    echo 'At least one argument is required'
-    exit 1
+  echo "Usage: sudo ./autostart <your arguments>"
+  exit 1
 fi
 
-# location of the MSIKLM binary (maybe adjust this according to your install target)
-msiklm='/usr/local/bin/msiklm'
+# Take all arguments as parameters for msiklm
+MSIKLM_PARAMS="$*"
 
-# the rules file
-file='/etc/udev/rules.d/90-msiklm.rules'
-
-# autostart requires 'msiklm' to be installed
-if [ ! -f $msiklm ]; then
-    echo 'MSI Keyboard Light Manager is not installed, hence no autostart possible'
-    exit 1
-fi
-
-if [ "$1" != '--disable' ]; then
-    # activate the autostart
-
-    if (sudo $msiklm $@); then
-        echo 'Activating MSIKLM autostart...'
-        sleep 1
-
-        # redirection with '>' or '>>' takes place before 'sudo' is applied, hence not directly usable here
-        run="ACTION==\"add\", ATTRS{idVendor}==\"1770\", ATTRS{idProduct}==\"ff00\", RUN+=\"$msiklm " # trailing space since the arguments will be added
-        for arg in "$@"; do
-            run="$run '$arg'"
-        done
-        run="$run\"";
-
-        sudo sh -c "echo '# run MSIKLM to configure the keyboard illumination' > $file"
-        echo $run | sudo tee -a $file > /dev/null
-
-        sudo chmod 644 $file
-
-        echo "Autostart rules file '$file' created"
-    else
-        echo "Input arguments are not valid for 'msiklm', use 'msiklm help' to get an overview of valid arguments"
-        exit 1
-    fi
+# Add msiklm to sudoers if it doesn't exist
+if [ ! -f /etc/sudoers.d/extraPermissions ]; then
+  echo "Adding msiklm to sudoers..."
+  echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/msiklm" | sudo tee /etc/sudoers.d/extraPermissions
+  sudo chmod 440 /etc/sudoers.d/extraPermissions
 else
-    # deactivate the autostart
-
-    echo 'Deactivating MSIKLM autostart...'
-    sleep 1
-
-    if [ -f $file ]; then
-        echo 'Removing autostart rules file...'
-        sleep 1
-
-        sudo rm -v $file
-    fi
+  echo "The sudoers file already exists, skipping this step..."
 fi
+
+# Create or update the systemd service file
+echo "Creating or updating the systemd service file..."
+sudo tee /etc/systemd/system/msiklm.service > /dev/null <<EOL
+[Unit]
+Description=MSIKLM Service
+After=network.target
+
+[Service]
+ExecStart=sudo /usr/local/bin/msiklm $MSIKLM_PARAMS
+Restart=always
+RestartSec=10
+User=$USERNAME
+
+[Install]
+WantedBy=default.target
+WantedBy=sleep.target
+WantedBy=systemd-suspend.service
+WantedBy=systemd-hibernate.service
+EOL
+
+# Reload systemd daemons
+sudo systemctl daemon-reload
+
+# Enable the service
+sudo systemctl enable msiklm.service
+
+# Restart the service to apply new parameters
+sudo systemctl restart msiklm.service
+
+echo "Configuration complete. The msiklm service is now enabled and running with the parameters: $MSIKLM_PARAMS."
+

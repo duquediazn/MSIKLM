@@ -1,18 +1,18 @@
 #!/bin/bash
 
-# Deshabilitar el servicio
+# Disable the service
 sudo systemctl disable msiklm.service
 
-# Detener el servicio si está corriendo
+# Stop the service if it's running
 sudo systemctl stop msiklm.service
 
-# Eliminar el archivo de servicio
+# Remove the service file
 sudo rm /etc/systemd/system/msiklm.service
 
-# Recargar los demonios de systemd
+# Reload systemd daemons
 sudo systemctl daemon-reload
 
-# Eliminar el archivo de sudoers
+# Remove the sudoers file
 sudo rm /etc/sudoers.d/extraPermissions
 
 echo "All changes have been reverted."

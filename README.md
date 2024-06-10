@@ -160,27 +160,22 @@ the communication with the keyboard while it is controlled by the SteelSeries En
 
 # Autostart
 
-An important additional feature is the optional autostart functionality since the keyboard will
-reset itself to its default color configuration whenever you reboot it or resume from standby.
-Hence, it is really useful to automatically reconfigure the keyboard to your configuration of
-choice. To do this, there is an extra script called `autostart.sh` that can do this for you. This
-script registers MSIKLM to the udev service (more precisely it registers the keyboard to the udev
-service which calls MSIKLM as soon as the keyboard is detected) by creating a rule file:
+This script registers MSIKLM to the systemd service, ensuring that your keyboard configuration is
+applied automatically at startup.
 
-    /etc/udev/rules.d/90-msiklm.rules
+To set up autostart with your preferred MSIKLM arguments, run:
 
-To create this file including your MSIKLM arguments of choice, run:
+    sudo ./autostart <your arguments>
 
-    ./autostart.sh <your arguments>
+Try if everything works by first rebooting your system and then try a standby and wakeup. 
 
-Try if everything works by first rebooting your system and then try a standby and wakeup. If
-everything works, we are done here. If not, please report an issue. :-)
+The autostart can be disabled by running
 
-Finally, the autostart can be disabled by running
+    sudo ./autostart_disable
 
-    ./autostart.sh --disable
+which will disable the autostart by removing the systemd service.
 
-which will disable the autostart by removing the rule file.
+*The change from udev to systemd was suggested by AtomicRobotMan0101 in this post: https://github.com/Gibtnix/MSIKLM/issues/54*
 
 
 # Uninstallation
